@@ -1,0 +1,135 @@
+from queue import PriorityQueue
+import numpy as np #tem que importar esse addon
+
+
+class Estado:
+    def __init__(self, board, objective, cost=0, father=None, move=""):
+        self.board = board
+        self.objective = objective
+        self.cost = cost
+        self.father = father
+        self.move = move
+        self.f = self.cost + self.h2()
+
+
+    def __lt__(self, other):
+        return self.f < other.f
+
+    def __eq__(self, other):
+        return np.array_equal(self.board, other.board)
+
+    def __str__(self):
+        return str(self.board)
+
+    def __repr__(self):
+        return str(self.board) + " {g=" + str(self.cost) + ", h=" + str(self.h2()) + ", f=" + str(self.f) + "}"
+
+
+    def h1(self):
+        contador = 0
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] != self.objective[i][j]:
+                    contador += 1
+        return contador
+
+    # h2
+    def h2(self):
+        dist = 0
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        if (self.objective[i][j] == self.board[k][l]):
+                            dist += abs(int(i - k)) + abs(int(j - l))
+        return dist
+
+
+    def get_neighbor(self):
+        neighbor = []
+        i, j = self.get_empty()
+        if i > 0:
+            novo_board = self.swap(i, j, i - 1, j)
+            neighbor.append(Estado(novo_board, self.objective, self.cost + 1, self, "UP"))
+        if i < 2:
+            novo_board = self.swap(i, j, i + 1, j)
+            neighbor.append(Estado(novo_board, self.objective, self.cost + 1, self, "Down"))
+        if j > 0:
+            novo_board = self.swap(i, j, i, j - 1)
+            neighbor.append(Estado(novo_board, self.objective, self.cost + 1, self, "Left"))
+        if j < 2:
+            novo_board = self.swap(i, j, i, j + 1)
+            neighbor.append(Estado(novo_board, self.objective, self.cost + 1, self, "Right"))
+        return neighbor
+
+    # retorna os indices da posicao vazia
+    def get_empty(self):
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] == 0:
+                    return i, j
+
+    # troca os numeros de posicao no board
+    def swap(self, i1, j1, i2, j2):
+        novo_board = [linha[:] for linha in self.board]
+        novo_board[i1][j1], novo_board[i2][j2] = novo_board[i2][j2], novo_board[i1][j1]
+        return novo_board
+
+
+def a_estrela(estado_inicial, estado_objective):
+    fronteira = PriorityQueue()
+    visitados = []
+
+    no_inicial = Estado(estado_inicial, estado_objective)
+    fronteira.put(no_inicial)
+    print("Visitando:", no_inicial)
+
+    cont_fronteira = 0
+    while not fronteira.empty():
+
+        print("Visitado " + str(cont_fronteira) + ":")
+        print(fronteira.queue)
+        print("\n")
+        cont_fronteira += 1
+
+        no_atual = fronteira.get()
+        print("Visitado:", no_atual)
+        visitados.append(no_atual)
+
+        if no_atual.board == estado_objective:
+            moves = []
+            caminho = []
+
+
+            caminho.append(no_atual)
+
+            while no_atual.father:
+                moves.append(no_atual.move)
+                no_atual = no_atual.father
+                # inclui o father no caminho
+                caminho.append(no_atual)
+
+            print(str(len(visitados)) + " Visitados:")
+            print(str(visitados))
+
+            caminho.reverse()
+            print("\n")
+            print("Caminho a percorrer até o objetivo final: " + str(len(caminho)) + " Estados:")
+            print(str(caminho))
+
+            print("\n")
+            print(str(len(moves)) + " Moves:")
+            print(str(moves))
+            return None
+
+        for vizinho in no_atual.get_neighbor():
+            if vizinho not in visitados:
+                fronteira.put(vizinho)
+    return None
+
+print("Iniciando...")
+print()
+estado_inicial = [[1, 8, 2], [0, 4, 3], [7, 6, 5]]
+estado_objective = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
+
+a_estrela(estado_inicial, estado_objective)
